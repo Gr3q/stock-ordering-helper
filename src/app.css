@@ -1,2 +1,13 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
+
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+
+@theme {
+    --text-base: 0.875rem;
+    --text-sm: 0.75rem;
+}

@@ -8,9 +8,11 @@
   interface Props {
     site: Site;
     search: string | null;
+    checked: boolean;
+    onChecked?: (open: boolean) => void;
   }
 
-  let { site, search }: Props = $props();
+  let { site, search, checked, onChecked }: Props = $props();
 
   const siteInfo = $derived(SiteConfigs[site]);
 
@@ -22,18 +24,24 @@
   });
 </script>
 
-{#if search}
-  <iframe
-    style:background="white"
-    class="frame"
-    src={url.toString()}
-    title={siteInfo.name}
-  ></iframe>
-{/if}
-
-<style lang="scss">
-  .frame {
-    width: 100%;
-    height: 100%;
-  }
-</style>
+<div class="mt-4">
+  <input
+    type="checkbox"
+    id={site}
+    onchange={(e) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      onChecked?.(checked);
+    }}
+    checked={checked}
+  />
+  <strong>{SiteConfigs[site].name}:</strong>
+  {#if search}
+    <a
+      class="text-blue-400 underline"
+      href={url}
+      target="_blank">Search for "{search}"</a
+    >
+  {:else}
+    <span>No search term entered.</span>
+  {/if}
+</div>

@@ -1,16 +1,36 @@
 <script lang="ts">
   import { SiteConfigs, Sites } from "$lib/sites";
+  import Button from "../components/Button.svelte";
+  import IconButton from "../components/IconButton.svelte";
   import Site from "../components/site.svelte";
+  import TextField from "../components/TextField.svelte";
+  import Icon from "@iconify/svelte";
 
-  let searchInput = $state("mozzarella");
+  function constructUrl(url: string, params: Record<string, string>): string {
+    return `${url}?${new URLSearchParams(params).toString()}`;
+  }
+
+  let searchInput = $state("");
   let search = $state<string | null>(null);
+  let sitesToOpen = $state<Set<string>>(new Set(Sites));
 
-  $effect(() => console.log(searchInput, search))
+  $effect(() => console.log(searchInput, search));
 </script>
 
-<div class="w-lvw h-lvh">
-  <div class="flex row">
-    <input
+<div class="w-lvw h-lvh p-2 bg-gray-900 text-gray-50">
+  <h1>Stock search</h1>
+  <div class="flex row gap-2">
+    {#snippet clearButton()}
+      <IconButton
+        style="z-index: 10;"
+        disabled={searchInput.trim() === ""}
+        onclick={() => {
+          searchInput = "";
+        }}><Icon icon="mdi:close" /></IconButton
+      >
+    {/snippet}
+    <TextField
+      class="input"
       type="text"
       value={searchInput}
       oninput={(e) => {
@@ -21,17 +41,38 @@
         searchInput = e.target.value;
       }}
       placeholder="mozzarella"
+      endAdornment={clearButton}
     />
-    <button
+    <Button
+      disabled={searchInput.trim() === ""}
       onclick={() => {
         search = searchInput;
-      }}>Search</button
+        for (const site of Sites) {
+          if (!sitesToOpen.has(site)) {
+            continue;
+          }
+          const siteInfo = SiteConfigs[site];
+          const url = constructUrl(siteInfo.searchUrl, {
+            ...siteInfo.additionalParams,
+            ...(search ? { [siteInfo.searchQueryParam]: search } : {}),
+          });
+          window.open(url.toString(), "_blank");
+        }
+      }}>Open selected</Button
     >
   </div>
-
-  <div class="grid grid-cols-2 w-full h-full">
-      {#each Sites as site (site)}
-        <Site {search} {site} />
-      {/each}
-  </div>
+  {#each Sites as site (site)}
+    <Site
+      {site}
+      search={searchInput}
+      checked={sitesToOpen.has(site)}
+      onChecked={(checked) => {
+        if (checked) {
+          sitesToOpen.add(site);
+        } else {
+          sitesToOpen.delete(site);
+        }
+      }}
+    />
+  {/each}
 </div>
