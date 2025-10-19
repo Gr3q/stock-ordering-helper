@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { SiteConfigs, Sites } from "$lib/sites";
+  import { browser } from "$app/environment";
+  import { SiteConfigs, Sites, Site as SiteEnum } from "$lib/sites";
+  import { loadFromStorage, saveToStorage } from "$lib/storage";
   import Button from "../components/Button.svelte";
   import IconButton from "../components/IconButton.svelte";
   import Site from "../components/site.svelte";
@@ -12,9 +14,9 @@
 
   let searchInput = $state("");
   let search = $state<string | null>(null);
-  let sitesToOpen = $state<Set<string>>(new Set(Sites));
-
-  $effect(() => console.log(searchInput, search));
+  let sitesToOpen = $state<Set<SiteEnum> | null>(
+    browser ? new Set(loadFromStorage("sites") ?? Sites) : null
+  );
 </script>
 
 <div class="w-lvw h-lvh p-2 bg-gray-900 text-gray-50">
@@ -48,9 +50,10 @@
       onclick={() => {
         search = searchInput;
         for (const site of Sites) {
-          if (!sitesToOpen.has(site)) {
+          if (!sitesToOpen?.has(site)) {
             continue;
           }
+
           const siteInfo = SiteConfigs[site];
           const url = constructUrl(siteInfo.searchUrl, {
             ...siteInfo.additionalParams,
@@ -65,13 +68,20 @@
     <Site
       {site}
       search={searchInput}
-      checked={sitesToOpen.has(site)}
+      checked={sitesToOpen ? sitesToOpen.has(site) : null}
       onChecked={(checked) => {
+        if (!sitesToOpen) {
+          return;
+        }
+
         if (checked) {
           sitesToOpen.add(site);
         } else {
           sitesToOpen.delete(site);
         }
+
+        console.log("sitesToOpen", sitesToOpen);
+        saveToStorage("sites", [...sitesToOpen]);
       }}
     />
   {/each}

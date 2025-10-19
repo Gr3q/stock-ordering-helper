@@ -1,5 +1,6 @@
 <script lang="ts">
   import { SiteConfigs, type Site } from "$lib/sites";
+  import Skeleton from "./Skeleton.svelte";
 
   function constructUrl(url: string, params: Record<string, string>): string {
     return `${url}?${new URLSearchParams(params).toString()}`;
@@ -8,7 +9,7 @@
   interface Props {
     site: Site;
     search: string | null;
-    checked: boolean;
+    checked: boolean | null;
     onChecked?: (open: boolean) => void;
   }
 
@@ -24,22 +25,31 @@
   });
 </script>
 
-<div class="mt-4">
-  <input
-    type="checkbox"
-    id={site}
-    onchange={(e) => {
-      const checked = (e.target as HTMLInputElement).checked;
-      onChecked?.(checked);
-    }}
-    checked={checked}
-  />
+<div class="mt-4 flex gap-1 items-center">
+  {#snippet Input()}
+    <input
+      type="checkbox"
+      id={site}
+      onchange={(e) => {
+        const checked = (e.target as HTMLInputElement).checked;
+        onChecked?.(checked);
+      }}
+      {checked}
+    />
+  {/snippet}
+
+  {#if checked === null}
+    <Skeleton style="line-height: 1;">
+      {@render Input()}
+    </Skeleton>
+  {:else}
+    {@render Input()}
+  {/if}
+
   <strong>{SiteConfigs[site].name}:</strong>
   {#if search}
-    <a
-      class="text-blue-400 underline"
-      href={url}
-      target="_blank">Search for "{search}"</a
+    <a class="text-blue-400 underline" href={url} target="_blank"
+      >Search for "{search}"</a
     >
   {:else}
     <span>No search term entered.</span>
