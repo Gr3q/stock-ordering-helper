@@ -80,7 +80,6 @@
           sitesToOpen.delete(site);
         }
 
-        console.log("sitesToOpen", sitesToOpen);
         saveToStorage("sites", [...sitesToOpen]);
       }}
     />
