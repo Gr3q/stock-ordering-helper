@@ -1,16 +1,22 @@
-import { array, enum as _enum, type infer as _infer } from "zod";
+import z from "zod";
 import { Site } from "./sites";
 import { browser } from "$app/environment";
 
-const sitesValidator = array(_enum(Site));
+const sitesValidator = z.array(z.enum(Site));
+const searchHistoryItemValidator = z.object({
+    timestamps: z.date().array(),
+});
 
 const STORAGE_DATA = {
     sites: sitesValidator,
+    searchHistory: z.record(z.string(), searchHistoryItemValidator),
 } as const;
 
 type StorageData = typeof STORAGE_DATA;
 
-export function saveToStorage<T extends keyof StorageData>(key: T, data: _infer<StorageData[T]>): void {
+export type SearchHistoryItem = z.infer<typeof searchHistoryItemValidator>;
+
+export function saveToStorage<T extends keyof StorageData>(key: T, data: z.infer<StorageData[T]>): void {
     if (!browser) {
         return;
     }
@@ -18,7 +24,7 @@ export function saveToStorage<T extends keyof StorageData>(key: T, data: _infer<
     localStorage.setItem(key, JSON.stringify(data));
 }
 
-export function loadFromStorage<T extends keyof StorageData>(key: T): _infer<StorageData[T]> | null {
+export function loadFromStorage<T extends keyof StorageData>(key: T): z.infer<StorageData[T]> | null {
     if (!browser) {
         return null;
     }
@@ -30,7 +36,8 @@ export function loadFromStorage<T extends keyof StorageData>(key: T): _infer<Sto
         if (!result.success) {
             return null;
         }
-        return result.data;
+
+        return result.data as z.infer<StorageData[T]>;
     } catch {
         return null;
     }

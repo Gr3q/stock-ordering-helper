@@ -1,7 +1,13 @@
 <script lang="ts">
   import { browser } from "$app/environment";
+  import {
+    saveHistoryTerm,
+    saveSitesToOpen,
+    sitesToOpenCachedProp,
+  } from "$lib/models/localStorageModel";
   import { SiteConfigs, Sites, Site as SiteEnum } from "$lib/sites";
   import { loadFromStorage, saveToStorage } from "$lib/storage";
+  import { unwrapCachedProperty } from "$lib/utils/unwrapCachedProp.svelte";
   import Button from "../components/Button.svelte";
   import IconButton from "../components/IconButton.svelte";
   import Site from "../components/site.svelte";
@@ -14,9 +20,8 @@
 
   let searchInput = $state("");
   let search = $state<string | null>(null);
-  let sitesToOpen = $state<Set<SiteEnum> | null>(
-    browser ? new Set(loadFromStorage("sites") ?? Sites) : null
-  );
+  const sitesToOpen = unwrapCachedProperty(sitesToOpenCachedProp.value);
+  const sitesToOpenValue = $derived(structuredClone(sitesToOpen.value));
 </script>
 
 <div class="w-lvw h-lvh p-2 bg-gray-900 text-gray-50">
@@ -57,10 +62,11 @@
         onclick={() => {
           search = searchInput;
           for (const site of Sites) {
-            if (!sitesToOpen?.has(site)) {
+            if (!sitesToOpenValue?.has(site)) {
               continue;
             }
 
+            saveHistoryTerm(search);
             const siteInfo = SiteConfigs[site];
             const url = constructUrl(siteInfo.searchUrl, {
               ...siteInfo.additionalParams,
@@ -75,19 +81,19 @@
       <Site
         {site}
         search={searchInput}
-        checked={sitesToOpen ? sitesToOpen.has(site) : null}
+        checked={sitesToOpenValue ? sitesToOpenValue.has(site) : null}
         onChecked={(checked) => {
-          if (!sitesToOpen) {
+          if (!sitesToOpenValue) {
             return;
           }
 
           if (checked) {
-            sitesToOpen.add(site);
+            sitesToOpenValue.add(site);
           } else {
-            sitesToOpen.delete(site);
+            sitesToOpenValue.delete(site);
           }
 
-          saveToStorage("sites", [...sitesToOpen]);
+          saveSitesToOpen(sitesToOpenValue);
         }}
       />
     {/each}
