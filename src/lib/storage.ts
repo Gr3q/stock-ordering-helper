@@ -4,7 +4,7 @@ import { browser } from "$app/environment";
 
 const sitesValidator = z.array(z.enum(Site));
 const searchHistoryItemValidator = z.object({
-    timestamps: z.date().array(),
+    timestamps: z.array(z.iso.datetime()),
 });
 
 const STORAGE_DATA = {

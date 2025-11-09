@@ -8,7 +8,7 @@ export const sitesToOpenCachedProp = new CachedProp<Set<Site> | null>(async () =
     return storedSites ? new Set(storedSites) : null;
 });
 
-export const searchHistory = new CachedProp<Record<string, SearchHistoryItem> | null>(async () => {
+export const searchHistoryCachedProp = new CachedProp<Record<string, SearchHistoryItem> | null>(async () => {
     const storedHistory = loadFromStorage("searchHistory");
     return storedHistory;
 });
@@ -22,13 +22,28 @@ export function saveHistoryTerm(term: string): void {
     const now = new Date();
 
     if (history[term]) {
-        history[term].timestamps.push(now);
+        history[term].timestamps.push(now.toISOString());
     } else {
-        history[term] = { timestamps: [now] };
+        history[term] = { timestamps: [now.toISOString()] };
     }
 
     saveToStorage("searchHistory", history);
-    searchHistory.setValue(history);
+    searchHistoryCachedProp.setValue(history);
+}
+
+export function deleteHistoryTerm(term: string): void {
+    if (!browser) {
+        return;
+    }
+
+    const history = loadFromStorage("searchHistory") || {};
+
+    if (history[term]) {
+        delete history[term];
+    }
+
+    saveToStorage("searchHistory", history);
+    searchHistoryCachedProp.setValue(history);
 }
 
 export function saveSitesToOpen(sites: Set<Site>): void {
