@@ -18,12 +18,31 @@ export class CachedProp<T> {
     }
 
     private set(value: Promise<T>) {
+        if (this.retryTimeout != null) {
+            clearTimeout(this.retryTimeout);
+            this.retryTimeout = null;
+        }
+
         if (!this.setter) {
             return;
         }
 
         this.result = value;
         this.setter(value);
+
+        // If the result is null, retry after a delay
+        void this.result.then((val) => {
+            if (val != null) {
+                return;
+            }
+
+            this.retryTimeout = window.setTimeout(() => {
+                this.retryTimeout = null;
+                if (this.active) {
+                    this.set(this.getter());
+                }
+            }, 1000);
+        });
     }
 
     constructor(getter: () => Promise<T>) {
@@ -41,6 +60,7 @@ export class CachedProp<T> {
                 this.retryTimeout = null;
             }
 
+            // initial fetch
             if (this.result == null) {
                 this.set(this.getter());
             }
@@ -50,9 +70,8 @@ export class CachedProp<T> {
                         return;
                     }
 
-                    this.retryTimeout = window.setTimeout(() => {
-                        this.set(this.getter());
-                    }, 1000);
+                    // Immediate retry for null values on resubscribe
+                    this.set(this.getter());
                 });
             }
 
